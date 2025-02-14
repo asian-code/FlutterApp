@@ -136,11 +136,13 @@ class AppWidgets {
     required IconData icon,
     bool obscureText = false,
     Widget? suffixIcon,
+    TextEditingController? controller,
   }) {
     return Container(
       padding: const EdgeInsets.all(AppTheme.defaultPadding),
       decoration: AppTheme.inputDecoration,
       child: TextField(
+        controller: controller,
         obscureText: obscureText,
         textAlignVertical: TextAlignVertical.center,
         decoration: AppTheme.getInputDecoration(
