@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:animated_notch_bottom_bar/animated_notch_bottom_bar/animated_notch_bottom_bar.dart'; // Import the package
 import '../../theme.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';
 import 'custBottomNavbar.dart';
 
@@ -673,8 +675,78 @@ class StoreScreen extends StatelessWidget {
   }
 }
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
+
+  @override
+  _ProfileScreenState createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _isLoading = false;
+  final _storage = const FlutterSecureStorage();
+
+  Future<void> _deleteAccount() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Get the JWT token from secure storage
+      final token = await _storage.read(key: 'jwt_token');
+
+      if (token == null) {
+        throw Exception('Authentication required. Please login again.');
+      }
+
+      final response = await http.delete(
+        Uri.parse('http://10.10.10.15:8000/delete/me'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 204) {
+        // Clear stored tokens
+        await Future.wait([
+          _storage.delete(key: 'jwt_token'),
+          _storage.delete(key: 'refresh_token'),
+        ]);
+
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/');
+        }
+      } else {
+        // Handle different status codes
+        String errorMessage = 'Failed to delete account. Please try again.';
+        if (response.statusCode == 401) {
+          errorMessage = 'Session expired. Please login again.';
+          if (mounted) {
+            Navigator.of(context).pushReplacementNamed('/');
+          }
+        }
+
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception:', '')),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   void _showDeleteWarning(BuildContext context) {
     showDialog(
@@ -683,8 +755,8 @@ class ProfileScreen extends StatelessWidget {
         title: 'Delete Account',
         message: 'Are you sure you want to delete your account? This is not reversible.',
         onConfirm: () {
-          // Implement account deletion logic here
-          Navigator.of(context).pushReplacementNamed('/');
+          Navigator.of(context).pop(); // Close the dialog
+          _deleteAccount(); // Call the delete account API
         },
       ),
     );
@@ -698,57 +770,68 @@ class ProfileScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(AppTheme.defaultPadding),
-        child: Column(
-          children: [
-            AppWidgets.inputField(
-              hint: 'Full Name',
-              icon: Icons.person,
-            ),
-            const SizedBox(height: 16),
-            AppWidgets.inputField(
-              hint: 'Email',
-              icon: Icons.email,
-            ),
-            const SizedBox(height: 16),
-            AppWidgets.gradientButton(
-              text: 'Update Profile',
-              onPressed: () {
-                // Implement profile update logic
-              },
-            ),
-            const SizedBox(height: 32),
-            Container(
-              width: double.infinity,
-              height: AppTheme.buttonHeight,
-              decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-                border: Border.all(
-                  color: Colors.red,
-                  width: 1,
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(AppTheme.defaultPadding),
+            child: Column(
+              children: [
+                AppWidgets.inputField(
+                  hint: 'Full Name',
+                  icon: Icons.person,
                 ),
-              ),
-              child: TextButton(
-                onPressed: () => _showDeleteWarning(context),
-                style: TextButton.styleFrom(
-                  shape: RoundedRectangleBorder(
+                const SizedBox(height: 16),
+                AppWidgets.inputField(
+                  hint: 'Email',
+                  icon: Icons.email,
+                ),
+                const SizedBox(height: 16),
+                AppWidgets.gradientButton(
+                  text: 'Update Profile',
+                  onPressed: () {
+                    // Implement profile update logic
+                  },
+                ),
+                const SizedBox(height: 32),
+                Container(
+                  width: double.infinity,
+                  height: AppTheme.buttonHeight,
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                    border: Border.all(
+                      color: Colors.red,
+                      width: 1,
+                    ),
+                  ),
+                  child: TextButton(
+                    onPressed: _isLoading ? null : () => _showDeleteWarning(context),
+                    style: TextButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                      ),
+                    ),
+                    child: Text(
+                      'Delete Account',
+                      style: TextStyle(
+                        color: _isLoading ? Colors.red.withOpacity(0.5) : Colors.red,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
-                child: const Text(
-                  'Delete Account',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+              ],
+            ),
+          ),
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: const Center(
+                child: CircularProgressIndicator(),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

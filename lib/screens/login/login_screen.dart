@@ -22,12 +22,61 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _passwordError;
   bool _emailTouched = false;
   bool _passwordTouched = false;
+  final _storage = const FlutterSecureStorage();
 
   @override
   void initState() {
     super.initState();
     _usernameController.addListener(_validateForm);
     _passwordController.addListener(_validateForm);
+    _checkExistingToken();
+  }
+
+  Future<void> _checkExistingToken() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final token = await _storage.read(key: 'jwt_token');
+      if (token == null) {
+        // No token found, user needs to login manually
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // Verify token by making a request to a protected endpoint
+      final response = await http.get(
+        Uri.parse('http://10.10.10.15:8000/get/me'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json'
+        },
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw Exception('Connection timeout. Please try again.'),
+      );
+
+      if (response.statusCode == 200) {
+        // Token is valid, proceed to home screen
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        // Token is invalid, clear storage
+        await Future.wait([
+          _storage.delete(key: 'jwt_token'),
+          _storage.delete(key: 'refresh_token'),
+        ]);
+      }
+    } catch (e) {
+      // On any error, clear storage
+      await Future.wait([
+        _storage.delete(key: 'jwt_token'),
+        _storage.delete(key: 'refresh_token'),
+      ]);
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -143,7 +192,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _loginUser() async {
-    // Validate form before proceeding
     _validateForm();
     if (!_isFormValid) return;
 
@@ -173,10 +221,9 @@ class _LoginScreenState extends State<LoginScreen> {
         final String? refreshToken = responseData['refresh_token'];
 
         if (jwtToken != null && refreshToken != null) {
-          const storage = FlutterSecureStorage();
           await Future.wait([
-            storage.write(key: 'jwt_token', value: jwtToken),
-            storage.write(key: 'refresh_token', value: refreshToken),
+            _storage.write(key: 'jwt_token', value: jwtToken),
+            _storage.write(key: 'refresh_token', value: refreshToken),
           ]);
 
           if (!mounted) return;
@@ -192,7 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(error.toString()),
+          content: Text(error.toString().replaceAll('Exception:', '')),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),

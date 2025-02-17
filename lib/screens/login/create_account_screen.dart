@@ -156,7 +156,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     });
 
     try {
-      const String apiUrl = 'http://10.10.10.15:8000/users';
+      const String apiUrl = 'http://10.10.10.15:8000/create';
 
       final Map<String, String> requestBody = {
         'full_name': _fullNameController.text.trim(),
