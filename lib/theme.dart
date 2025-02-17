@@ -114,6 +114,80 @@ class AppTheme {
 }
 
 // Reusable Widgets
+class WarningDialog extends StatelessWidget {
+  final String title;
+  final String message;
+  final String confirmText;
+  final String cancelText;
+  final VoidCallback onConfirm;
+
+  const WarningDialog({
+    Key? key,
+    required this.title,
+    required this.message,
+    this.confirmText = 'YES',
+    this.cancelText = 'Cancel',
+    required this.onConfirm,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppTheme.backgroundColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          color: AppTheme.textColorPrimary,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      content: Text(
+        message,
+        style: TextStyle(
+          color: AppTheme.textColorSecondary,
+          fontSize: 16,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(
+            cancelText,
+            style: TextStyle(
+              color: AppTheme.textColorSecondary,
+              fontSize: 16,
+            ),
+          ),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+            ),
+          ),
+          onPressed: () {
+            Navigator.of(context).pop();
+            onConfirm();
+          },
+          child: Text(
+            confirmText,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class AppWidgets {
   static Widget gradientButton({
     required String text,

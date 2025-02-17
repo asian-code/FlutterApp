@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert'; // For JSON parsing
+import 'dart:convert';
 import '../../theme.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
-/* TO ACCESS THE SECURE TOKENS
-String? jwtToken = await storage.read(key: 'jwt_token');
-String? refreshToken = await storage.read(key: 'refresh_token');
- */
 
 class LoginScreen extends StatefulWidget {
   final bool isEmployee;
@@ -21,95 +16,192 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _isLoading = false; // To show loading indicator during API call
+  bool _isLoading = false;
+  bool _isFormValid = false;
+  String? _emailError;
+  String? _passwordError;
+  bool _emailTouched = false;
+  bool _passwordTouched = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _usernameController.addListener(_validateForm);
+    _passwordController.addListener(_validateForm);
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _validateForm() {
+    setState(() {
+      // Only show email error if the field has been touched
+      _emailError = _emailTouched ? _validateEmail(_usernameController.text.trim()) : null;
+      // Only show password error if the field has been touched
+      _passwordError = _passwordTouched ? _validatePassword(_passwordController.text.trim()) : null;
+
+      _isFormValid = _usernameController.text.trim().isNotEmpty &&
+          _passwordController.text.trim().isNotEmpty &&
+          _validateEmail(_usernameController.text.trim()) == null &&
+          _validatePassword(_passwordController.text.trim()) == null;
+    });
+  }
+
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Email is required';
+    }
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(value)) {
+      return 'Please enter a valid email';
+    }
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Password is required';
+    }
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+    return null;
+  }
 
   Widget _buildPasswordField() {
-    return AppWidgets.inputField(
-      hint: 'Password',
-      icon: Icons.lock_outline,
-      controller: _passwordController,
-      obscureText: _obscurePassword,
-      suffixIcon: IconButton(
-        icon: Icon(
-          _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-          color: Colors.grey,
-        ),
-        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+    return Focus(
+      onFocusChange: (hasFocus) {
+        if (!hasFocus) {
+          setState(() {
+            _passwordTouched = true;
+            _validateForm();
+          });
+        }
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppWidgets.inputField(
+            hint: 'Password',
+            icon: Icons.lock_outline,
+            controller: _passwordController,
+            obscureText: _obscurePassword,
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                color: Colors.grey,
+              ),
+              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+            ),
+          ),
+          if (_passwordError != null && _passwordTouched)
+            Padding(
+              padding: const EdgeInsets.only(left: 16, top: 4),
+              child: Text(
+                _passwordError!,
+                style: TextStyle(color: Colors.red[400], fontSize: 12),
+              ),
+            ),
+        ],
       ),
     );
   }
+
+  Widget _buildEmailField() {
+    return Focus(
+      onFocusChange: (hasFocus) {
+        if (!hasFocus) {
+          setState(() {
+            _emailTouched = true;
+            _validateForm();
+          });
+        }
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppWidgets.inputField(
+            hint: 'Email',
+            icon: Icons.person_outline,
+            controller: _usernameController,
+          ),
+          if (_emailError != null && _emailTouched)
+            Padding(
+              padding: const EdgeInsets.only(left: 16, top: 4),
+              child: Text(
+                _emailError!,
+                style: TextStyle(color: Colors.red[400], fontSize: 12),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _loginUser() async {
-    setState(() {
-      _isLoading = true; // Show loading indicator
-      print('DEBUG: Loading indicator activated.');
-    });
+    // Validate form before proceeding
+    _validateForm();
+    if (!_isFormValid) return;
+
+    setState(() => _isLoading = true);
 
     try {
       const String apiUrl = 'http://10.10.10.15:8000/login';
-      print('DEBUG: API URL set to $apiUrl.');
 
-      // Prepare the request body
       final Map<String, String> requestBody = {
         'username': _usernameController.text.trim(),
         'password': _passwordController.text.trim(),
       };
-      print('DEBUG: Request body prepared: $requestBody.');
 
-      // Make the POST request
-      print('DEBUG: Sending POST request to $apiUrl...');
       final response = await http.post(
         Uri.parse(apiUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw Exception('Connection timeout. Please try again.'),
       );
-      print('DEBUG: POST request completed. Response status code: ${response.statusCode}.');
 
-      // Parse the response
-      if (response.statusCode != 500) {
-        print('DEBUG: Successful response received. Parsing response data...');
-        final Map<String, dynamic> responseData = jsonDecode(response.body);
-        print('DEBUG: Response data parsed: $responseData.');
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
 
-        // Extract tokens from the response
+      if (response.statusCode == 200) {
         final String? jwtToken = responseData['access_token'];
         final String? refreshToken = responseData['refresh_token'];
-        print('DEBUG: JWT Token: $jwtToken, Refresh Token: $refreshToken.');
 
         if (jwtToken != null && refreshToken != null) {
-          print('DEBUG: Tokens found. Storing tokens securely...');
           const storage = FlutterSecureStorage();
-          await storage.write(key: 'jwt_token', value: jwtToken);
-          await storage.write(key: 'refresh_token', value: refreshToken);
-          print('DEBUG: Tokens stored successfully.');
+          await Future.wait([
+            storage.write(key: 'jwt_token', value: jwtToken),
+            storage.write(key: 'refresh_token', value: refreshToken),
+          ]);
 
-          // Navigate to the home screen after successful login
-          print('DEBUG: Navigating to the home screen...');
+          if (!mounted) return;
           Navigator.pushReplacementNamed(context, '/home');
         } else {
-          print('DEBUG: Tokens not found in the response.');
-          throw Exception('Tokens not found in the response');
+          throw Exception('Invalid response format');
         }
       } else {
-        print('DEBUG: Error response received. Status code: ${response.statusCode}.');
-        // Handle API errors
-        final errorMessage = jsonDecode(response.body)['message'] ?? 'An error occurred';
-        print('DEBUG: Error message from server: $errorMessage.');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
-        );
+        final errorMessage = responseData['message'] ?? 'Authentication failed';
+        throw Exception(errorMessage);
       }
     } catch (error) {
-      print('DEBUG: Exception caught: $error.');
-      // Handle exceptions (e.g., network issues)
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $error')),
+        SnackBar(
+          content: Text(error.toString()),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     } finally {
-      setState(() {
-        _isLoading = false; // Hide loading indicator
-      });
+      if (mounted) setState(() => _isLoading = false);
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -121,7 +213,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo
                 Padding(
                   padding: const EdgeInsets.only(bottom: 40),
                   child: Image.asset(
@@ -130,7 +221,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     fit: BoxFit.contain,
                   ),
                 ),
-                // Login Container
                 Container(
                   width: AppTheme.containerWidth,
                   margin: const EdgeInsets.symmetric(horizontal: 24),
@@ -145,12 +235,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: AppTheme.headerStyle,
                       ),
                       const SizedBox(height: 30),
-                      AppWidgets.inputField(
-
-                        hint: 'Email',
-                        icon: Icons.person_outline,
-                        controller: _usernameController,
-                      ),
+                      _buildEmailField(),
                       const SizedBox(height: 16),
                       _buildPasswordField(),
                       AppWidgets.linkButton(
