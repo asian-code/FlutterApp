@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
-import '../../theme.dart';
+import '../../theme/app_theme.dart';
 
+/// A custom bottom navigation bar with animations
 class CustomBottomNavBar extends StatelessWidget {
+  /// Currently selected index
   final int currentIndex;
+
+  /// Callback when an item is tapped
   final Function(int) onTap;
 
+  /// Navigation items to display
+  final List<BottomNavItem> items;
+
+  /// Constructor
   const CustomBottomNavBar({
     Key? key,
     required this.currentIndex,
     required this.onTap,
+    required this.items,
   }) : super(key: key);
 
   @override
@@ -17,7 +26,7 @@ class CustomBottomNavBar extends StatelessWidget {
       margin: const EdgeInsets.all(16),
       height: 80,
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F24),
+        color: AppTheme.inputBackgroundColor,
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
@@ -38,9 +47,9 @@ class CustomBottomNavBar extends StatelessWidget {
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOutCubic,
-            left: (MediaQuery.of(context).size.width - 32) / 3 * currentIndex,
-            child: Container(
-              width: (MediaQuery.of(context).size.width - 32) / 3,
+            left: (MediaQuery.of(context).size.width - 32) / items.length * currentIndex,
+            child: SizedBox(
+              width: (MediaQuery.of(context).size.width - 32) / items.length,
               height: 80,
               child: CustomPaint(
                 painter: SelectionPainter(
@@ -52,11 +61,11 @@ class CustomBottomNavBar extends StatelessWidget {
           // Navigation items
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(0, Icons.apps_rounded, 'My Apps'),
-              _buildNavItem(1, Icons.dashboard_rounded, 'Dashboard'),
-              _buildNavItem(2, Icons.person_rounded, 'Profile'),
-            ],
+            children: items.asMap().entries.map((entry) {
+              final index = entry.key;
+              final item = entry.value;
+              return _buildNavItem(index, item.icon, item.label);
+            }).toList(),
           ),
         ],
       ),
@@ -108,7 +117,7 @@ class CustomBottomNavBar extends StatelessWidget {
                       size: isSelected ? 28 : 24,
                       color: isSelected
                           ? AppTheme.primaryColor
-                          : AppTheme.textColorSecondary,
+                          : AppTheme.textSecondaryColor,
                     ),
                   ],
                 ),
@@ -119,7 +128,7 @@ class CustomBottomNavBar extends StatelessWidget {
                 style: TextStyle(
                   color: isSelected
                       ? AppTheme.primaryColor
-                      : AppTheme.textColorSecondary,
+                      : AppTheme.textSecondaryColor,
                   fontSize: 12,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
@@ -133,9 +142,27 @@ class CustomBottomNavBar extends StatelessWidget {
   }
 }
 
+/// Class for bottom navigation items
+class BottomNavItem {
+  /// Icon for the item
+  final IconData icon;
+
+  /// Label for the item
+  final String label;
+
+  /// Constructor
+  const BottomNavItem({
+    required this.icon,
+    required this.label,
+  });
+}
+
+/// Custom painter for selection indicator
 class SelectionPainter extends CustomPainter {
+  /// Color for the selection indicator
   final Color color;
 
+  /// Constructor
   SelectionPainter({required this.color});
 
   @override
