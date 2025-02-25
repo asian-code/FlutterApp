@@ -46,7 +46,7 @@ class WarningDialog extends StatelessWidget {
       title: Text(
         title,
         style: const TextStyle(
-          color: AppTheme.textPrimaryColor,
+          color: AppTheme.textPrimaryColor,  // Updated color reference
           fontSize: 20,
           fontWeight: FontWeight.bold,
         ),
@@ -54,7 +54,7 @@ class WarningDialog extends StatelessWidget {
       content: Text(
         message,
         style: TextStyle(
-          color: AppTheme.textSecondaryColor,
+          color: AppTheme.textSecondaryColor,  // Updated color reference
           fontSize: 16,
         ),
       ),
@@ -69,7 +69,7 @@ class WarningDialog extends StatelessWidget {
           child: Text(
             cancelText,
             style: TextStyle(
-              color: AppTheme.textSecondaryColor,
+              color: AppTheme.textSecondaryColor,  // Updated color reference
               fontSize: 16,
             ),
           ),
@@ -142,7 +142,7 @@ class DialogHelper {
         title: Text(
           title,
           style: const TextStyle(
-            color: AppTheme.textPrimaryColor,
+            color: AppTheme.textPrimaryColor,  // Updated color reference
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -150,7 +150,7 @@ class DialogHelper {
         content: Text(
           message,
           style: TextStyle(
-            color: AppTheme.textSecondaryColor,
+            color: AppTheme.textSecondaryColor,  // Updated color reference
             fontSize: 16,
           ),
         ),

@@ -115,7 +115,7 @@ class AppsScreen extends StatelessWidget {
             children: [
               Text(title, style: AppTheme.buttonTextStyle),
               Text(
-                '\$price/mo',
+                '\$$price/mo',  // Fixed string interpolation
                 style: const TextStyle(
                   color: AppTheme.primaryColor,
                   fontSize: 18,
@@ -139,4 +139,4 @@ class AppsScreen extends StatelessWidget {
         ],
       ),
     );
-  }
+  }}

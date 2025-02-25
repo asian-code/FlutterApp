@@ -207,4 +207,4 @@ class ChartIndicator extends StatelessWidget {
         )
       ],
     );
-  }
+  }}

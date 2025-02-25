@@ -186,12 +186,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         textInputAction: TextInputAction.done,
                         onSubmitted: (_) => _login(),
                       ),
-
+                      SizedBox(height: 8),
                       // Forgot password link
                       LinkButton(
                         text: 'Forgot Password?',
                         onPressed: () {},
-                        alignment: Alignment.centerRight,
+                        alignment: Alignment.centerLeft,
                       ),
                       const SizedBox(height: 24),
 

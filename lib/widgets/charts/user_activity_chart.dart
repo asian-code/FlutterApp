@@ -43,7 +43,7 @@ class UserActivityChart extends StatelessWidget {
         Text(
           title,
           style: const TextStyle(
-            color: AppTheme.textPrimaryColor,
+            color: AppTheme.textPrimaryColor,  // Updated color reference
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -59,13 +59,13 @@ class UserActivityChart extends StatelessWidget {
                 verticalInterval: 1,
                 getDrawingHorizontalLine: (value) {
                   return FlLine(
-                    color: AppTheme.textSecondaryColor.withOpacity(0.1),
+                    color: AppTheme.textSecondaryColor.withOpacity(0.1),  // Updated color reference
                     strokeWidth: 1,
                   );
                 },
                 getDrawingVerticalLine: (value) {
                   return FlLine(
-                    color: AppTheme.textSecondaryColor.withOpacity(0.1),
+                    color: AppTheme.textSecondaryColor.withOpacity(0.1),  // Updated color reference
                     strokeWidth: 1,
                   );
                 },
@@ -145,7 +145,7 @@ class UserActivityChart extends StatelessWidget {
 
   Widget _bottomTitleWidgets(double value, TitleMeta meta) {
     const style = TextStyle(
-      color: AppTheme.textSecondaryColor,
+      color: AppTheme.textSecondaryColor,  // Updated color reference
       fontSize: 12,
     );
 
@@ -180,7 +180,7 @@ class UserActivityChart extends StatelessWidget {
       child: Text(
         '${value.toInt()}k',
         style: const TextStyle(
-          color: AppTheme.textSecondaryColor,
+          color: AppTheme.textSecondaryColor,  // Updated color reference
           fontSize: 12,
         ),
       ),

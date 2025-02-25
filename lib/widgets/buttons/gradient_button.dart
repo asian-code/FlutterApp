@@ -49,7 +49,7 @@ class GradientButton extends StatelessWidget {
         onPressed: isLoading ? null : onPressed,
         style: AppTheme.gradientButtonStyle,
         child: Padding(
-          padding: padding ?? const EdgeInsets.symmetric(vertical: 12.0),
+          padding: padding ?? const EdgeInsets.symmetric(vertical: 1.0),
           child: isLoading
               ? const SizedBox(
             height: 24,
