@@ -23,11 +23,16 @@ class CustomBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.all(16),
-      height: 80,
+      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+      height: 70, // Slightly reduced height
       decoration: BoxDecoration(
         color: AppTheme.inputBackgroundColor,
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+          bottomLeft: Radius.circular(0), // Changed from rounded to flat top
+          bottomRight: Radius.circular(0), // Changed from rounded to flat top
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.3),
@@ -50,12 +55,12 @@ class CustomBottomNavBar extends StatelessWidget {
             left: (MediaQuery.of(context).size.width - 32) / items.length * currentIndex,
             child: SizedBox(
               width: (MediaQuery.of(context).size.width - 32) / items.length,
-              height: 80,
-              child: CustomPaint(
-                painter: SelectionPainter(
-                  color: AppTheme.primaryColor.withOpacity(0.15),
-                ),
-              ),
+              height: 70,
+              // child: CustomPaint(
+              //   painter: SelectionPainter(
+              //     color: AppTheme.primaryColor.withOpacity(0.15),
+              //   ),
+              // ),
             ),
           ),
           // Navigation items
