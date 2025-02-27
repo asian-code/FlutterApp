@@ -30,8 +30,8 @@ class CustomBottomNavBar extends StatelessWidget {
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(30),
           topRight: Radius.circular(30),
-          bottomLeft: Radius.circular(0), // Changed from rounded to flat top
-          bottomRight: Radius.circular(0), // Changed from rounded to flat top
+          bottomLeft: Radius.circular(0),
+          bottomRight: Radius.circular(0),
         ),
         boxShadow: [
           BoxShadow(
